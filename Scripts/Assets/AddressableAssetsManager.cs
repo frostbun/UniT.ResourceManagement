@@ -45,23 +45,23 @@ namespace UniT.ResourceManagement
 
         IEnumerable<T> IAssetsManager.LoadAll<T>(object key)
         {
-            var keys = this.keyMap.GetOrAdd(key, () =>
+            return this.keyMap.GetOrAdd(key, state =>
             {
-                var resourceLocations = this.GetAllResourceLocationsInternal<T>(key).WaitForResultOrThrow();
-                return this.GetAllKeys(resourceLocations);
-            });
-            this.logger.Debug($"Found {keys.Count} keys for {key}");
-            return keys.Select(this.Load<T>).ToArray();
+                var resourceLocations = state.@this.GetAllResourceLocationsInternal<T>(state.key).WaitForResultOrThrow();
+                var keys              = state.@this.GetAllKeys(resourceLocations);
+                state.@this.logger.Debug($"Found {keys.Count} keys for {state.key}");
+                return keys;
+            }, (@this: this, key)).Select(this.Load<T>).ToArray();
         }
 
         private T Load<T>(object key) where T : Object
         {
-            return (T)this.cache.GetOrAdd(key, () =>
+            return (T)this.cache.GetOrAdd(key, state =>
             {
-                var asset = this.LoadInternal<T>(key).WaitForResultOrThrow();
-                this.logger.Debug($"Loaded {key}");
+                var asset = state.@this.LoadInternal<T>(state.key).WaitForResultOrThrow();
+                state.@this.logger.Debug($"Loaded {state.key}");
                 return asset;
-            });
+            }, (@this: this, key));
         }
 
         #endregion
@@ -73,12 +73,13 @@ namespace UniT.ResourceManagement
 
         async UniTask<IEnumerable<T>> IAssetsManager.LoadAllAsync<T>(object key, IProgress<float>? progress, CancellationToken cancellationToken)
         {
-            var keys = await this.keyMap.GetOrAddAsync(key, async () =>
+            var keys = await this.keyMap.GetOrAddAsync(key, async state =>
             {
-                var resourceLocations = await this.GetAllResourceLocationsInternal<T>(key).ToUniTask(cancellationToken: cancellationToken);
-                return this.GetAllKeys(resourceLocations);
-            });
-            this.logger.Debug($"Found {keys.Count} keys for {key}");
+                var resourceLocations = await state.@this.GetAllResourceLocationsInternal<T>(state.key).ToUniTask(cancellationToken: state.cancellationToken);
+                var keys              = state.@this.GetAllKeys(resourceLocations);
+                state.@this.logger.Debug($"Found {keys.Count} keys for {state.key}");
+                return keys;
+            }, (@this: this, key, cancellationToken));
             return await keys.SelectAsync(this.LoadAsync<T>, progress, cancellationToken).ToArrayAsync();
         }
 
@@ -96,12 +97,12 @@ namespace UniT.ResourceManagement
 
         private async UniTask<T> LoadAsync<T>(object key, IProgress<float>? progress, CancellationToken cancellationToken) where T : Object
         {
-            return (T)await this.cache.GetOrAddAsync(key, async () =>
+            return (T)await this.cache.GetOrAddAsync(key, async state =>
             {
-                var asset = await this.LoadInternal<T>(key).ToUniTask(progress, cancellationToken);
-                this.logger.Debug($"Loaded {key}");
+                var asset = await state.@this.LoadInternal<T>(state.key).ToUniTask(state.progress, state.cancellationToken);
+                state.@this.logger.Debug($"Loaded {state.key}");
                 return (Object)asset;
-            });
+            }, (@this: this, key, progress, cancellationToken));
         }
         #else
         IEnumerator IAssetsManager.LoadAsync<T>(object key, Action<T> callback, IProgress<float>? progress) => this.LoadAsync(key, callback, progress);
@@ -224,7 +225,7 @@ namespace UniT.ResourceManagement
 
         private IReadOnlyCollection<string> GetAllKeys(IList<IResourceLocation> resourceLocations)
         {
-            return resourceLocations.Select(resourceLocation => resourceLocation.PrimaryKey.TrimStart(this.keyPrefix)).ToArray();
+            return resourceLocations.Select((resourceLocation, keyPrefix) => resourceLocation.PrimaryKey.TrimStart(keyPrefix), this.keyPrefix).ToArray();
         }
 
         #endregion

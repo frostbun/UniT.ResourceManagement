@@ -45,25 +45,25 @@ namespace UniT.ResourceManagement
 
         T IAssetsManager.Load<T>(object key)
         {
-            return (T)this.cacheSingle.GetOrAdd(key, () =>
+            return (T)this.cacheSingle.GetOrAdd(key, state =>
             {
-                var asset = Resources.Load<T>(this.GetScopedKey(key))
-                    ?? throw new ArgumentOutOfRangeException($"{key} not found in resources");
-                this.logger.Debug($"Loaded {key}");
+                var asset = Resources.Load<T>(state.@this.GetScopedKey(state.key))
+                    ?? throw new ArgumentOutOfRangeException($"{state.key} not found in resources");
+                state.@this.logger.Debug($"Loaded {state.key}");
                 return asset;
-            });
+            }, (@this: this, key));
         }
 
         IEnumerable<T> IAssetsManager.LoadAll<T>(object key) => this.LoadAll<T>(key);
 
         private IEnumerable<T> LoadAll<T>(object key) where T : Object
         {
-            return this.cacheMultiple.GetOrAdd(key, () =>
+            return this.cacheMultiple.GetOrAdd(key, state =>
             {
-                var assets = Resources.LoadAll<T>(this.GetScopedKey(key));
-                this.logger.Debug($"Loaded {key}");
+                var assets = Resources.LoadAll<T>(state.@this.GetScopedKey(state.key));
+                state.@this.logger.Debug($"Loaded {state.key}");
                 return assets;
-            }).Cast<T>();
+            }, (@this: this, key)).Cast<T>();
         }
 
         #endregion
@@ -73,13 +73,13 @@ namespace UniT.ResourceManagement
         #if UNIT_UNITASK
         async UniTask<T> IAssetsManager.LoadAsync<T>(object key, IProgress<float>? progress, CancellationToken cancellationToken)
         {
-            return (T)await this.cacheSingle.GetOrAddAsync(key, async () =>
+            return (T)await this.cacheSingle.GetOrAddAsync(key, async state =>
             {
-                var asset = await Resources.LoadAsync<T>(this.GetScopedKey(key)).ToUniTask(progress: progress, cancellationToken: cancellationToken)
-                    ?? throw new ArgumentOutOfRangeException($"{key} not found in resources");
-                this.logger.Debug($"Loaded {key}");
+                var asset = await Resources.LoadAsync<T>(state.@this.GetScopedKey(state.key)).ToUniTask(progress: state.progress, cancellationToken: state.cancellationToken)
+                    ?? throw new ArgumentOutOfRangeException($"{state.key} not found in resources");
+                state.@this.logger.Debug($"Loaded {state.key}");
                 return asset;
-            });
+            }, (@this: this, key, progress, cancellationToken));
         }
 
         UniTask<IEnumerable<T>> IAssetsManager.LoadAllAsync<T>(object key, IProgress<float>? progress, CancellationToken cancellationToken)
