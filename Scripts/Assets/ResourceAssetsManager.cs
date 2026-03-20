@@ -3,7 +3,6 @@ namespace UniT.ResourceManagement
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using UniT.Extensions;
     using UniT.Logging;
     using UnityEngine;
@@ -15,6 +14,9 @@ namespace UniT.ResourceManagement
     using Cysharp.Threading.Tasks;
     #else
     using System.Collections;
+    #endif
+    #if !UNITY_WEBGL
+    using System.Linq;
     #endif
 
     public sealed class ResourceAssetsManager : IAssetsManager
@@ -37,12 +39,13 @@ namespace UniT.ResourceManagement
 
         #endregion
 
-        #region Sync
-
         private string GetScopedKey(object key) => key is string
             ? $"{this.keyPrefix}{key}"
             : throw new NotSupportedException("Resources only supports loading assets from string paths");
 
+        #region Sync
+
+        #if !UNITY_WEBGL
         T IAssetsManager.Load<T>(object key)
         {
             return (T)this.cacheSingle.GetOrAdd(key, state =>
@@ -65,6 +68,7 @@ namespace UniT.ResourceManagement
                 return assets;
             }, (@this: this, key)).Cast<T>();
         }
+        #endif
 
         #endregion
 
@@ -84,8 +88,12 @@ namespace UniT.ResourceManagement
 
         UniTask<IEnumerable<T>> IAssetsManager.LoadAllAsync<T>(object key, IProgress<float>? progress, CancellationToken cancellationToken)
         {
+            #if !UNITY_WEBGL
             this.logger.Warning("Unity does not support loading all from resources asynchronously");
             return UniTask.FromResult(this.LoadAll<T>(key));
+            #else
+            throw new NotSupportedException("Unity does not support loading all from resources asynchronously");
+            #endif
         }
         #else
         IEnumerator IAssetsManager.LoadAsync<T>(object key, Action<T> callback, IProgress<float>? progress)

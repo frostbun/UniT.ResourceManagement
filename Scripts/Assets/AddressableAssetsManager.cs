@@ -41,6 +41,7 @@ namespace UniT.ResourceManagement
 
         #region Sync
 
+        #if !UNITY_WEBGL
         T IAssetsManager.Load<T>(object key) => this.Load<T>(key);
 
         IEnumerable<T> IAssetsManager.LoadAll<T>(object key)
@@ -63,6 +64,7 @@ namespace UniT.ResourceManagement
                 return asset;
             }, (@this: this, key));
         }
+        #endif
 
         #endregion
 

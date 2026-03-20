@@ -3,7 +3,6 @@ namespace UniT.ResourceManagement
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using UniT.Extensions;
     using UnityEngine;
@@ -14,11 +13,15 @@ namespace UniT.ResourceManagement
     #else
     using System.Collections;
     #endif
+    #if !UNITY_WEBGL
+    using System.Diagnostics.CodeAnalysis;
+    #endif
 
     public interface IAssetsManager : IDisposable
     {
         #region Sync
 
+        #if !UNITY_WEBGL
         public T Load<T>(object key) where T : Object;
 
         public IEnumerable<T> LoadAll<T>(object key) where T : Object;
@@ -66,6 +69,8 @@ namespace UniT.ResourceManagement
         public bool TryLoadComponent<T>([MaybeNullWhen(false)] out T component) => this.TryLoadComponent(typeof(T).GetKey(), out component);
 
         #endregion
+
+        #endif
 
         #endregion
 
