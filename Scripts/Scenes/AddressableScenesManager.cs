@@ -1,4 +1,4 @@
-﻿#if UNIT_ADDRESSABLES
+#if UNIT_ADDRESSABLES
 #nullable enable
 namespace UniT.ResourceManagement
 {
