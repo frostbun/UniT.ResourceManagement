@@ -3,6 +3,7 @@
   "rootNamespace": "UniT.ResourceManagement",
   "references": [
     "UniT.Extensions",
+    "UniT.Extensions.UniTask",
     "UniT.Extensions.Addressables",
     "UniT.Logging",
     "Unity.Addressables",
@@ -10,11 +11,6 @@
     "UniTask"
   ],
   "versionDefines": [
-    {
-      "name": "com.cysharp.unitask",
-      "expression": "",
-      "define": "UNIT_UNITASK"
-    },
     {
       "name": "com.unity.addressables",
       "expression": "",
