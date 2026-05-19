@@ -7,7 +7,6 @@ namespace UniT.ResourceManagement
     using System.Threading;
     using Cysharp.Threading.Tasks;
     using UniT.Extensions;
-    using UniT.Extensions.UniTask;
     using UniT.Logging;
     using UnityEngine;
     using UnityEngine.Networking;

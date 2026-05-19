@@ -9,7 +9,6 @@ namespace UniT.ResourceManagement
     using System.Threading;
     using Cysharp.Threading.Tasks;
     using UniT.Extensions;
-    using UniT.Extensions.UniTask;
     using UniT.Logging;
     using UnityEngine.AddressableAssets;
     using UnityEngine.Scripting;
@@ -78,19 +77,8 @@ namespace UniT.ResourceManagement
             return (IReadOnlyCollection<T>)await this.cacheMultiple.GetOrAddAsync(key, static async state =>
             {
                 var (@this, key, progress, cancellationToken) = state;
-                var handle            = Addressables.LoadResourceLocationsAsync(@this.GetScopedKey(key), typeof(T));
-                var resourceLocations = await handle.ToUniTask(cancellationToken: cancellationToken);
-                var assets = await resourceLocations.SelectAsync(
-                    (resourceLocation, progress, cancellationToken) =>
-                    {
-                        var key = @this.GetScopedKey(resourceLocation.PrimaryKey.TrimStart(@this.keyPrefix));
-                        return Addressables.LoadAssetAsync<T>(key).ToUniTask(progress, cancellationToken);
-                    },
-                    progress,
-                    cancellationToken
-                ).ToArrayAsync();
-                handle.Release();
-                @this.logger.Debug($"Loaded {assets.Length} assets for {key}");
+                var assets = await Addressables.LoadAssetsAsync<T>(@this.GetScopedKey(key), null).ToUniTask(progress, cancellationToken);
+                @this.logger.Debug($"Loaded {assets.Count} assets for {key}");
                 return (IReadOnlyCollection<Object>)assets;
             }, (@this: this, key, progress, cancellationToken));
         }
@@ -120,7 +108,7 @@ namespace UniT.ResourceManagement
                 this.logger.Warning($"Trying to unload all {key} that was not loaded");
                 return;
             }
-            assets.ForEach(Unload);
+            Unload(assets);
             this.logger.Debug($"Unloaded {assets.Count} assets for {key}");
         }
 
@@ -137,7 +125,7 @@ namespace UniT.ResourceManagement
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void Unload(Object asset)
+        private static void Unload(object asset)
         {
             #if UNITY_EDITOR
             if (IgnoreDispose) return;
@@ -149,7 +137,7 @@ namespace UniT.ResourceManagement
         private void Dispose()
         {
             this.cacheSingle.Clear(Unload);
-            this.cacheMultiple.Clear(static assets => assets.ForEach(Unload));
+            this.cacheMultiple.Clear(Unload);
         }
 
         #if UNITY_EDITOR
