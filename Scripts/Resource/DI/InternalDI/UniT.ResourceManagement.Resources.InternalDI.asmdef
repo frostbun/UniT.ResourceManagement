@@ -1,0 +1,17 @@
+{
+  "name": "UniT.ResourceManagement.Resources.InternalDI",
+  "references": [
+    "UniT.ResourceManagement.Resources",
+    "UniT.DI.InternalDI"
+  ],
+  "versionDefines": [
+    {
+      "name": "com.frostbun.unit.di",
+      "expression": "",
+      "define": "UNIT_INTERNALDI"
+    }
+  ],
+  "defineConstraints": [
+    "UNIT_INTERNALDI"
+  ]
+}

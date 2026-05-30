@@ -1,0 +1,23 @@
+{
+  "name": "UniT.ResourceManagement.Addressables.InternalDI",
+  "references": [
+    "UniT.ResourceManagement.Addressables",
+    "UniT.DI.InternalDI"
+  ],
+  "versionDefines": [
+    {
+      "name": "com.unity.addressables",
+      "expression": "",
+      "define": "UNIT_ADDRESSABLES"
+    },
+    {
+      "name": "com.frostbun.unit.di",
+      "expression": "",
+      "define": "UNIT_INTERNALDI"
+    }
+  ],
+  "defineConstraints": [
+    "UNIT_ADDRESSABLES",
+    "UNIT_INTERNALDI"
+  ]
+}

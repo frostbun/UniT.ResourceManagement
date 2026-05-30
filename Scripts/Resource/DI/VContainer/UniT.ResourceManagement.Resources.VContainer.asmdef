@@ -1,0 +1,17 @@
+{
+  "name": "UniT.ResourceManagement.Resources.VContainer",
+  "references": [
+    "UniT.ResourceManagement.Resources",
+    "VContainer"
+  ],
+  "versionDefines": [
+    {
+      "name": "jp.hadashikick.vcontainer",
+      "expression": "",
+      "define": "UNIT_VCONTAINER"
+    }
+  ],
+  "defineConstraints": [
+    "UNIT_VCONTAINER"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "UniT.ResourceManagement.Resources",
+  "references": [
+    "UniT.ResourceManagement",
+    "UniT.Extensions",
+    "UniT.Extensions.UniTask",
+    "UniT.Logging",
+    "UniTask"
+  ]
+}
