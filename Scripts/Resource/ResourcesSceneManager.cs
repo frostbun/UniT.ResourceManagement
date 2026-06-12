@@ -5,6 +5,7 @@ namespace UniT.ResourceManagement.Resources
     using System.Collections.Generic;
     using System.Threading;
     using Cysharp.Threading.Tasks;
+    using UniT.Extensions;
     using UniT.Logging;
     using UnityEngine;
     using UnityEngine.SceneManagement;
@@ -17,7 +18,7 @@ namespace UniT.ResourceManagement.Resources
 
         private readonly ILogger logger;
 
-        private readonly Dictionary<string, AsyncOperation> loadingScenes = new();
+        private readonly Dictionary<string, AsyncOperation> loadedScenes = new();
 
         [Preserve]
         public ResourcesSceneManager(ILoggerManager loggerManager)
@@ -30,27 +31,35 @@ namespace UniT.ResourceManagement.Resources
 
         async UniTask ISceneManager.LoadAsync(string name, LoadSceneMode mode, bool activateOnLoad, IProgress<float>? progress, CancellationToken cancellationToken)
         {
-            var asyncOperation = SceneManager.LoadSceneAsync(name, mode)!;
-            if (activateOnLoad)
-            {
-                await asyncOperation.ToUniTask(progress: progress, cancellationToken: cancellationToken);
-            }
-            else
-            {
-                this.loadingScenes[name]            = asyncOperation;
-                asyncOperation.allowSceneActivation = false;
-                while (asyncOperation.progress < .9f)
+            if (mode is LoadSceneMode.Single) this.loadedScenes.Clear();
+            await this.loadedScenes.TryAddAsync(
+                name,
+                async static state =>
                 {
-                    await UniTask.Yield(cancellationToken);
-                    progress?.Report(asyncOperation.progress * 10 / 9);
-                }
-            }
+                    var asyncOperation = SceneManager.LoadSceneAsync(state.name, state.mode)!;
+                    if (state.activateOnLoad)
+                    {
+                        await asyncOperation.ToUniTask(progress: state.progress, cancellationToken: state.cancellationToken);
+                    }
+                    else
+                    {
+                        asyncOperation.allowSceneActivation = false;
+                        while (asyncOperation.progress < .9f)
+                        {
+                            await UniTask.Yield(state.cancellationToken);
+                            state.progress?.Report(asyncOperation.progress * 10 / 9);
+                        }
+                    }
+                    return asyncOperation;
+                },
+                (name, mode, activateOnLoad, progress, cancellationToken)
+            );
             this.logger.Debug($"Loaded {name}, mode: {mode}, activateOnLoad: {activateOnLoad}");
         }
 
         async UniTask ISceneManager.ActivateAsync(string name, IProgress<float>? progress, CancellationToken cancellationToken)
         {
-            if (!this.loadingScenes.Remove(name, out var asyncOperation))
+            if (!this.loadedScenes.Remove(name, out var asyncOperation))
             {
                 throw new InvalidOperationException($"Scene {name} not loaded");
             }
@@ -61,6 +70,11 @@ namespace UniT.ResourceManagement.Resources
 
         async UniTask ISceneManager.UnloadAsync(string name, IProgress<float>? progress, CancellationToken cancellationToken)
         {
+            if (!this.loadedScenes.Remove(name))
+            {
+                this.logger.Warning($"{name} not loaded");
+                return;
+            }
             await SceneManager.UnloadSceneAsync(name).ToUniTask(progress: progress, cancellationToken: cancellationToken);
             this.logger.Debug($"Unloaded {name}");
         }

@@ -70,19 +70,6 @@ namespace UniT.ResourceManagement.Unity
             }
         }
 
-        async UniTask<Sprite> IExternalAssetManager.DownloadSpriteAsync(string url, bool cache, IProgress<float>? progress, CancellationToken cancellationToken)
-        {
-            if (!cache) return (Sprite)await DownloadSpriteAsync();
-            return (Sprite)await this.cache.GetOrAddAsync(url, DownloadSpriteAsync);
-
-            async UniTask<object> DownloadSpriteAsync()
-            {
-                using var request = UnityWebRequestTexture.GetTexture(url);
-                await this.DownloadAsync(request, progress, cancellationToken);
-                return DownloadHandlerTexture.GetContent(request).CreateSprite();
-            }
-        }
-
         async UniTask<AudioClip> IExternalAssetManager.DownloadAudioClipAsync(string url, AudioType audioType, bool cache, IProgress<float>? progress, CancellationToken cancellationToken)
         {
             if (!cache) return (AudioClip)await DownloadAudioClipAsync();
@@ -105,30 +92,31 @@ namespace UniT.ResourceManagement.Unity
             await this.DownloadAsync(request, progress, cancellationToken);
         }
 
+        void IExternalAssetManager.DeleteCache(string url)
+        {
+            if (!this.cache.Remove(url, out var obj))
+            {
+                this.logger.Warning($"{url} not downloaded");
+                return;
+            }
+            if (obj is Object unityObj) Object.Destroy(unityObj);
+            this.logger.Debug($"Deleted {url}");
+        }
+
+        void IDisposable.Dispose()
+        {
+            this.cache.Clear(obj =>
+            {
+                if (obj is Object unityObj) Object.Destroy(unityObj);
+            });
+            this.logger.Debug("Disposed");
+        }
+
         private async UniTask DownloadAsync(UnityWebRequest request, IProgress<float>? progress, CancellationToken cancellationToken)
         {
             this.logger.Debug($"Downloading {request.url}");
             await request.SendWebRequest().ToUniTask(progress: progress, cancellationToken: cancellationToken);
             this.logger.Debug($"Downloaded {request.url}");
-        }
-
-        void IExternalAssetManager.DeleteCache(string key)
-        {
-            if (this.cache.Remove(key, out var obj))
-            {
-                if (obj is Sprite sprite) Object.Destroy(sprite.texture);
-                if (obj is Object unityObj) Object.Destroy(unityObj);
-                this.logger.Debug($"Deleted {key}");
-            }
-            else if (File.Exists(key))
-            {
-                File.Delete(key);
-                this.logger.Debug($"Deleted {key}");
-            }
-            else
-            {
-                this.logger.Warning($"Failed to delete {key}");
-            }
         }
     }
 }

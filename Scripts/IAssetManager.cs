@@ -33,10 +33,10 @@ namespace UniT.ResourceManagement
         public UniTask<IReadOnlyCollection<T>> LoadAllAsync<T>(IProgress<float>? progress = null, CancellationToken cancellationToken = default) where T : Object => this.LoadAllAsync<T>(typeof(T).GetKey(), progress, cancellationToken);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Unload<T>() => this.Unload(typeof(T).GetKey());
+        public void Unload<T>() where T : Object => this.Unload(typeof(T).GetKey());
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void UnloadAll<T>() => this.UnloadAll(typeof(T).GetKey());
+        public void UnloadAll<T>() where T : Object => this.UnloadAll(typeof(T).GetKey());
 
         #endregion
     }

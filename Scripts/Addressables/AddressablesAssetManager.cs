@@ -113,34 +113,22 @@ namespace UniT.ResourceManagement.Addressables
 
         void IDisposable.Dispose()
         {
-            this.Dispose();
+            this.cacheSingle.Clear(Unload);
+            this.cacheMultiple.Clear(Unload);
             this.logger.Debug("Disposed");
-        }
-
-        ~AddressablesAssetManager()
-        {
-            this.Dispose();
-            this.logger.Debug("Finalized");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void Unload(object asset)
         {
             #if UNITY_EDITOR
-            if (IgnoreDispose) return;
+            if (IgnoreUnload) return;
             #endif
             Addressables.Release(asset);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void Dispose()
-        {
-            this.cacheSingle.Clear(Unload);
-            this.cacheMultiple.Clear(Unload);
-        }
-
         #if UNITY_EDITOR
-        private static bool IgnoreDispose;
+        private static bool IgnoreUnload;
 
         static AddressablesAssetManager()
         {
@@ -149,7 +137,7 @@ namespace UniT.ResourceManagement.Addressables
 
         private static void OnPlayModeStateChanged(PlayModeStateChange stateChange)
         {
-            IgnoreDispose = stateChange is PlayModeStateChange.EnteredEditMode or PlayModeStateChange.ExitingPlayMode;
+            IgnoreUnload = stateChange is PlayModeStateChange.EnteredEditMode or PlayModeStateChange.ExitingPlayMode;
         }
         #endif
 

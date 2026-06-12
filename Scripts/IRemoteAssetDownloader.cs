@@ -14,6 +14,6 @@ namespace UniT.ResourceManagement
         public UniTask DownloadAllAsync(IProgress<float>? progress = null, CancellationToken cancellationToken = default);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public UniTask DownloadAsync<T>(IProgress<float>? progress = null, CancellationToken cancellationToken = default) => this.DownloadAsync(typeof(T).GetKey(), progress, cancellationToken);
+        public UniTask DownloadAsync<T>(IProgress<float>? progress = null, CancellationToken cancellationToken = default) where T : notnull => this.DownloadAsync(typeof(T).GetKey(), progress, cancellationToken);
     }
 }

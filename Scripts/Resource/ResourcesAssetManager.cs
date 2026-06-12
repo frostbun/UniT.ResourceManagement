@@ -102,14 +102,10 @@ namespace UniT.ResourceManagement.Resources
 
         void IDisposable.Dispose()
         {
-            this.Dispose();
+            this.cacheSingle.Clear(Unload);
+            this.cacheMultiple.Clear(static assets => assets.ForEach(Unload));
+            Resources.UnloadUnusedAssets();
             this.logger.Debug("Disposed");
-        }
-
-        ~ResourcesAssetManager()
-        {
-            this.Dispose();
-            this.logger.Debug("Finalized");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -117,14 +113,6 @@ namespace UniT.ResourceManagement.Resources
         {
             if (asset is GameObject) return;
             Resources.UnloadAsset(asset);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void Dispose()
-        {
-            this.cacheSingle.Clear(Unload);
-            this.cacheMultiple.Clear(static assets => assets.ForEach(Unload));
-            Resources.UnloadUnusedAssets();
         }
 
         #endregion

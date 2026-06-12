@@ -6,7 +6,7 @@ namespace UniT.ResourceManagement
     using Cysharp.Threading.Tasks;
     using UnityEngine;
 
-    public interface IExternalAssetManager
+    public interface IExternalAssetManager : IDisposable
     {
         public UniTask<string> DownloadTextAsync(string url, bool cache = true, IProgress<float>? progress = null, CancellationToken cancellationToken = default);
 
@@ -14,12 +14,10 @@ namespace UniT.ResourceManagement
 
         public UniTask<Texture2D> DownloadTextureAsync(string url, bool cache = true, IProgress<float>? progress = null, CancellationToken cancellationToken = default);
 
-        public UniTask<Sprite> DownloadSpriteAsync(string url, bool cache = true, IProgress<float>? progress = null, CancellationToken cancellationToken = default);
-
         public UniTask<AudioClip> DownloadAudioClipAsync(string url, AudioType audioType, bool cache = true, IProgress<float>? progress = null, CancellationToken cancellationToken = default);
 
         public UniTask DownloadFileAsync(string url, string savePath, bool cache = true, IProgress<float>? progress = null, CancellationToken cancellationToken = default);
 
-        public void DeleteCache(string key);
+        public void DeleteCache(string url);
     }
 }
