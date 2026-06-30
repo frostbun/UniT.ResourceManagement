@@ -50,10 +50,10 @@ namespace UniT.ResourceManagement.Addressables
             await Addressables.DownloadDependenciesAsync(Addressables.ResourceLocators.SelectMany(locator => locator.Keys), autoReleaseHandle: true).ToUniTask(subProgresses[1], cancellationToken);
         }
 
-        async UniTask<bool> IAssetManager.ContainsAsync<T>(object key, IProgress<float>? progress, CancellationToken cancellationToken)
+        async UniTask<bool> IAssetManager.ContainsAsync(object key, IProgress<float>? progress, CancellationToken cancellationToken)
         {
             if (this.cacheSingle.ContainsKey(key) || this.cacheMultiple.ContainsKey(key)) return true;
-            var handle            = Addressables.LoadResourceLocationsAsync(this.GetScopedKey(key), typeof(T));
+            var handle            = Addressables.LoadResourceLocationsAsync(this.GetScopedKey(key), typeof(Object));
             var resourceLocations = await handle.ToUniTask(progress, cancellationToken);
             var contains          = resourceLocations.Count > 0;
             handle.Release();
@@ -65,9 +65,16 @@ namespace UniT.ResourceManagement.Addressables
             return (T)await this.cacheSingle.GetOrAddAsync(key, static async state =>
             {
                 var (@this, key, progress, cancellationToken) = state;
-                var asset = await Addressables.LoadAssetAsync<T>(@this.GetScopedKey(key)).ToUniTask(progress, cancellationToken);
-                @this.logger.Debug($"Loaded {key}");
-                return (Object)asset;
+                try
+                {
+                    var asset = await Addressables.LoadAssetAsync<T>(@this.GetScopedKey(key)).ToUniTask(progress, cancellationToken);
+                    @this.logger.Debug($"Loaded {key}");
+                    return (Object)asset;
+                }
+                catch (InvalidKeyException)
+                {
+                    throw new KeyNotFoundException($"{key} not found in Addressables");
+                }
             }, (@this: this, key, progress, cancellationToken));
         }
 
